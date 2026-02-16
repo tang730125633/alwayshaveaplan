@@ -130,7 +130,7 @@ final class AppController: NSObject, ObservableObject {
               Log.info("FloatingPrompt: onCheck tapped")
               self?.performCheck(
                 reason: "floatingPromptCheckButton",
-                openCalendarIfNoEvents: false,
+                openCalendarIfNoEvents: true,
                 exitOnEvent: false,
                 showEventsIfAny: true
               )
@@ -160,7 +160,7 @@ final class AppController: NSObject, ObservableObject {
 
   private func openCalendarAppBackground() {
     let config = NSWorkspace.OpenConfiguration()
-    config.activates = false
+    config.activates = true
     config.addsToRecentItems = false
     NSWorkspace.shared.openApplication(
       at: URL(fileURLWithPath: "/System/Applications/Calendar.app"),
