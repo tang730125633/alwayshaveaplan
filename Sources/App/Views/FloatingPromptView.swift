@@ -1,5 +1,25 @@
 import EventKit
 import SwiftUI
+import AppKit
+
+// MARK: - Visual Effect Blur (macOS Native Blur)
+struct VisualEffectBlur: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+    }
+}
 
 // MARK: - Color Theme
 extension Color {
@@ -35,20 +55,27 @@ struct FloatingPromptView: View {
 
     var body: some View {
         ZStack {
-            // Background gradient
+            // Blurred background with vibrancy effect
+            VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+
+            // Subtle gradient overlay for depth
             LinearGradient(
-                colors: [Color.white, Color(red: 0.992, green: 0.988, blue: 0.98), Color(red: 0.98, green: 0.973, blue: 0.961)],
+                colors: [
+                    Color.white.opacity(0.3),
+                    Color(red: 0.98, green: 0.973, blue: 0.961).opacity(0.2)
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
 
-            // Decorative gradient orbs
+            // Decorative gradient orbs (more subtle with blur)
             GeometryReader { geometry in
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color.coral500.opacity(0.08), Color.clear],
+                            colors: [Color.coral500.opacity(0.12), Color.clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: geometry.size.width * 0.4
@@ -56,11 +83,12 @@ struct FloatingPromptView: View {
                     )
                     .frame(width: geometry.size.width * 0.7, height: geometry.size.width * 0.7)
                     .offset(x: geometry.size.width * 0.4, y: -geometry.size.height * 0.2)
+                    .blur(radius: 60)
 
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color.sage500.opacity(0.1), Color.clear],
+                            colors: [Color.sage500.opacity(0.15), Color.clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: geometry.size.width * 0.35
@@ -68,6 +96,7 @@ struct FloatingPromptView: View {
                     )
                     .frame(width: geometry.size.width * 0.6, height: geometry.size.width * 0.6)
                     .offset(x: -geometry.size.width * 0.15, y: geometry.size.height * 0.5)
+                    .blur(radius: 60)
             }
 
             // Main content
@@ -83,8 +112,12 @@ struct FloatingPromptView: View {
                     Spacer()
                     Text(currentTimeString)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.stone400)
+                        .foregroundColor(.white.opacity(0.7))
                         .monospacedDigit()
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(8)
                         .padding(.top, 24)
                         .padding(.trailing, 28)
                 }
@@ -115,19 +148,20 @@ struct NoEventsView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                Text("你想干什么？")
-                    .font(.system(size: 84, weight: .bold, design: .rounded))
+                Text("你正在成为什么样的人？")
+                    .font(.system(size: 72, weight: .bold, design: .rounded))
                     .foregroundColor(.stone800)
                     .multilineTextAlignment(.center)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 20)
                     .animation(.easeOut(duration: 0.6), value: appeared)
 
-                Text("别着急，好好想一想，当前最重要的事情是什么？")
-                    .font(.system(size: 24, weight: .regular))
+                Text("你此时要做什么事情别着急，请好好思考一下，当下最重要的事情是什么？")
+                    .font(.system(size: 22, weight: .regular))
                     .foregroundColor(.stone500)
                     .multilineTextAlignment(.center)
                     .padding(.top, 32)
+                    .padding(.horizontal, 60)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 15)
                     .animation(.easeOut(duration: 0.6).delay(0.1), value: appeared)
@@ -212,7 +246,7 @@ struct EventView: View {
                     GeometryReader { geometry in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.stone100)
+                                .fill(Color.white.opacity(0.3))
                                 .frame(height: 8)
 
                             RoundedRectangle(cornerRadius: 4)
@@ -232,8 +266,8 @@ struct EventView: View {
                 // Remaining time
                 HStack {
                     Spacer()
-                    Text("还剩 ")
-                        .foregroundColor(.stone500)
+                    Text("还剩 \(remainingTimeString)")
+                        .foregroundColor(.secondary)
                     + Text(remainingTimeString)
                         .foregroundColor(.coral600)
                         .fontWeight(.semibold)
@@ -246,14 +280,16 @@ struct EventView: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 44)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 4)
-                    .shadow(color: .black.opacity(0.06), radius: 20, x: 0, y: 10)
+                ZStack {
+                    VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow)
+                    Color.white.opacity(0.5)
+                }
             )
+            .cornerRadius(20)
+            .shadow(color: .black.opacity(0.15), radius: 30, x: 0, y: 15)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.3), lineWidth: 1.5)
             )
             .opacity(appeared ? 1 : 0)
             .scaleEffect(appeared ? 1 : 0.95)
