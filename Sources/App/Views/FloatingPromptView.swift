@@ -157,12 +157,13 @@ struct NoEventsView: View {
                     .animation(.easeOut(duration: 0.6), value: appeared)
 
                 Text("你此时要做什么事情别着急，请好好思考一下，\n当下最重要的事情是什么？")
-                    .font(.system(size: 20, weight: .regular))
-                    .foregroundColor(.stone500)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .lineSpacing(8)
                     .padding(.top, 28)
                     .padding(.horizontal, 80)
+                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 15)
                     .animation(.easeOut(duration: 0.6).delay(0.1), value: appeared)
@@ -170,28 +171,62 @@ struct NoEventsView: View {
                 Spacer()
                     .frame(minHeight: 40)
 
-                Button(action: onCheck) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 18, weight: .semibold))
-                        Text("检查日程")
-                            .font(.system(size: 18, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 18)
-                    .background(
-                        LinearGradient(
-                            colors: [.coral500, .coral600],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                // 按钮组
+                HStack(spacing: 20) {
+                    // 打开日历按钮
+                    Button(action: {
+                        NSWorkspace.shared.open(URL(string: "x-apple-reminderkit://")!)
+                        // 或者使用日历应用
+                        if let calendarURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") {
+                            NSWorkspace.shared.open(calendarURL)
+                        }
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("打开日历")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 18)
+                        .background(
+                            LinearGradient(
+                                colors: [.sage500, .sage600],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .cornerRadius(14)
-                    .shadow(color: .coral500.opacity(0.25), radius: 15, x: 0, y: 4)
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .cornerRadius(14)
+                        .shadow(color: .sage500.opacity(0.25), radius: 15, x: 0, y: 4)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
+                    .buttonStyle(.plain)
+
+                    // 检查日程按钮
+                    Button(action: onCheck) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("检查日程")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 18)
+                        .background(
+                            LinearGradient(
+                                colors: [.coral500, .coral600],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(14)
+                        .shadow(color: .coral500.opacity(0.25), radius: 15, x: 0, y: 4)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 20)
                 .animation(.easeOut(duration: 0.6).delay(0.2), value: appeared)
