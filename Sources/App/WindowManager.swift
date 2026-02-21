@@ -16,7 +16,7 @@ final class WindowManager {
             let hosting = NSHostingView(rootView: FloatingPromptView(model: floatingModel, onCheck: onCheck))
 
             let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
-            let size = NSSize(width: screen.width * 0.7, height: screen.height * 0.7)
+            let size = NSSize(width: screen.width * 0.9, height: min(screen.height * 0.5, 500))
             let origin = NSPoint(
                 x: screen.midX - size.width / 2,
                 y: screen.midY - size.height / 2

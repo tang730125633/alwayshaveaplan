@@ -149,24 +149,26 @@ struct NoEventsView: View {
                 Spacer()
 
                 Text("你正在成为什么样的人？")
-                    .font(.system(size: 72, weight: .bold, design: .rounded))
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
                     .foregroundColor(.stone800)
                     .multilineTextAlignment(.center)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 20)
                     .animation(.easeOut(duration: 0.6), value: appeared)
 
-                Text("你此时要做什么事情别着急，请好好思考一下，当下最重要的事情是什么？")
-                    .font(.system(size: 22, weight: .regular))
+                Text("你此时要做什么事情别着急，请好好思考一下，\n当下最重要的事情是什么？")
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundColor(.stone500)
                     .multilineTextAlignment(.center)
-                    .padding(.top, 32)
-                    .padding(.horizontal, 60)
+                    .lineSpacing(8)
+                    .padding(.top, 28)
+                    .padding(.horizontal, 80)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 15)
                     .animation(.easeOut(duration: 0.6).delay(0.1), value: appeared)
 
                 Spacer()
+                    .frame(minHeight: 40)
 
                 Button(action: onCheck) {
                     HStack(spacing: 10) {
@@ -176,8 +178,8 @@ struct NoEventsView: View {
                             .font(.system(size: 18, weight: .semibold))
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 16)
+                    .padding(.horizontal, 40)
+                    .padding(.vertical, 18)
                     .background(
                         LinearGradient(
                             colors: [.coral500, .coral600],
