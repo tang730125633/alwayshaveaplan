@@ -3,6 +3,7 @@ import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appController: AppController?
+    private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Log.info("Application did finish launching. bundleURL=\(Bundle.main.bundleURL.path)")
@@ -30,6 +31,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         disableCommandQ()
 
         appController = AppController()
+        setupMenuBar()
+    }
+
+    private func setupMenuBar() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+
+        if let button = statusItem?.button {
+            button.image = NSImage(systemSymbolName: "calendar.circle", accessibilityDescription: "FlowPlan")
+        }
+
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "打开主窗口", action: #selector(openMainWindow), keyEquivalent: "o"))
+        menu.addItem(NSMenuItem(title: "进入专注模式", action: #selector(openFocusMode), keyEquivalent: "f"))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+
+        statusItem?.menu = menu
+    }
+
+    @objc private func openMainWindow() {
+        appController?.triggerCheck()
+    }
+
+    @objc private func openFocusMode() {
+        appController?.openFocusMode()
     }
 
     private func disableCommandQ() {
@@ -47,5 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Prevent Command+Q from quitting the app
         Log.info("Terminate request blocked")
         return .terminateCancel
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        Log.info("Application reopen requested from Dock/app switcher hasVisibleWindows=\(flag)")
+        appController?.reopenPrimaryWindow()
+        return true
     }
 }

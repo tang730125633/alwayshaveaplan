@@ -5,6 +5,36 @@ final class CalendarManager {
     private let store = EKEventStore()
     private static let targetCalendarTitle = "日程安排"
 
+    enum CalendarError: LocalizedError {
+        case accessDenied
+        case noWritableCalendar
+
+        var errorDescription: String? {
+            switch self {
+            case .accessDenied:
+                return "没有日历访问权限。请在 系统设置 > 隐私与安全性 > 日历 中允许 AlwaysHaveAPlan 访问。"
+            case .noWritableCalendar:
+                return "没有可写入的日历。请先在系统日历中启用一个可写日历账户。"
+            }
+        }
+    }
+
+    private func hasReadAccess(for status: EKAuthorizationStatus) -> Bool {
+        if #available(macOS 14.0, *) {
+            return status == .fullAccess
+        }
+
+        return status == .authorized
+    }
+
+    private func hasWriteAccess(for status: EKAuthorizationStatus) -> Bool {
+        if #available(macOS 14.0, *) {
+            return status == .fullAccess || status == .writeOnly
+        }
+
+        return status == .authorized
+    }
+
     func requestAccessIfNeeded(completion: ((Bool) -> Void)? = nil) {
         let status = EKEventStore.authorizationStatus(for: .event)
         if #available(macOS 14.0, *) {
@@ -34,12 +64,7 @@ final class CalendarManager {
 
     func fetchCurrentEvents(completion: @escaping ([EKEvent]) -> Void) {
         let status = EKEventStore.authorizationStatus(for: .event)
-        let isAuthorized: Bool
-        if #available(macOS 14.0, *) {
-            isAuthorized = status == .fullAccess
-        } else {
-            isAuthorized = status == .authorized
-        }
+        let isAuthorized = hasReadAccess(for: status)
 
         guard isAuthorized else {
             Log.info("Calendar auth not granted. status=\(status.rawValue)")
@@ -75,5 +100,54 @@ final class CalendarManager {
         }
 
         completion(events.sorted { $0.startDate < $1.startDate })
+    }
+
+    func createEvent(title: String, startDate: Date, endDate: Date, completion: @escaping (Bool, Error?) -> Void) {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        let isAuthorized = hasWriteAccess(for: status)
+
+        guard isAuthorized else {
+            if status == .notDetermined {
+                requestAccessIfNeeded { [weak self] granted in
+                    guard let self else { return }
+                    if granted {
+                        self.createEvent(title: title, startDate: startDate, endDate: endDate, completion: completion)
+                    } else {
+                        Log.info("Calendar access request denied while creating event")
+                        completion(false, CalendarError.accessDenied)
+                    }
+                }
+                return
+            }
+
+            Log.info("Calendar auth not granted for creating event status=\(status.rawValue)")
+            completion(false, CalendarError.accessDenied)
+            return
+        }
+
+        let event = EKEvent(eventStore: store)
+        event.title = title
+        event.startDate = startDate
+        event.endDate = endDate
+
+        if let defaultCalendar = store.defaultCalendarForNewEvents {
+            event.calendar = defaultCalendar
+        } else if let fallbackCalendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications }) {
+            event.calendar = fallbackCalendar
+        } else {
+            let error = CalendarError.noWritableCalendar
+            Log.info("Failed to create event: \(error.localizedDescription)")
+            completion(false, error)
+            return
+        }
+
+        do {
+            try store.save(event, span: .thisEvent)
+            Log.info("Event created: \(title) [\(startDate) - \(endDate)]")
+            completion(true, nil)
+        } catch {
+            Log.info("Failed to create event: \(error)")
+            completion(false, error)
+        }
     }
 }

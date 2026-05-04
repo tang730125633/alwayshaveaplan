@@ -16,6 +16,10 @@
     <string>AppIcon</string>
     <key>NSCalendarsUsageDescription</key>
     <string>需要访问你的日历以在解锁时显示当前日程。</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>需要访问你的日历以读取当前日程并创建新的计划事项。</string>
+    <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+    <string>需要写入你的日历以创建新的计划事项。</string>
 </dict>
 </plist>
 

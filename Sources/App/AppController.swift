@@ -17,15 +17,31 @@ final class AppController: NSObject, ObservableObject {
     // First check immediately; if Calendar permission isn't granted yet,
     // this will show the prompt and then re-check once the user responds.
     scheduleUnlockCheck(
-      reason: "initialLaunch", openCalendarIfNoEvents: true, showEventsIfAny: true)
+      reason: "initialLaunch", openCalendarIfNoEvents: true, showEventsIfAny: true,
+      autoHideEventsAfter: 10)
     calendarManager.requestAccessIfNeeded { [weak self] _ in
       self?.scheduleUnlockCheck(
-        reason: "calendarPermissionChanged", openCalendarIfNoEvents: true, showEventsIfAny: true)
+        reason: "calendarPermissionChanged", openCalendarIfNoEvents: true, showEventsIfAny: true,
+        autoHideEventsAfter: 10)
     }
   }
 
   func triggerCheck() {
-    scheduleUnlockCheck(reason: "manual", openCalendarIfNoEvents: false, showEventsIfAny: true)
+    scheduleUnlockCheck(
+      reason: "manual", openCalendarIfNoEvents: false, showEventsIfAny: true,
+      autoHideEventsAfter: nil)
+  }
+
+  func openFocusMode() {
+    windowManager.showFocusMode()
+  }
+
+  func reopenPrimaryWindow() {
+    if windowManager.reopenPrimaryWindow() {
+      return
+    }
+
+    triggerCheck()
   }
 
   private func setupUnlockObservers() {
@@ -36,7 +52,8 @@ final class AppController: NSObject, ObservableObject {
       .sink { [weak self] _ in
         Log.info("NSWorkspace.sessionDidBecomeActiveNotification")
         self?.scheduleUnlockCheck(
-          reason: "sessionDidBecomeActive", openCalendarIfNoEvents: true, showEventsIfAny: true)
+          reason: "sessionDidBecomeActive", openCalendarIfNoEvents: true, showEventsIfAny: true,
+          autoHideEventsAfter: 10)
       }
       .store(in: &cancellables)
 
@@ -44,7 +61,8 @@ final class AppController: NSObject, ObservableObject {
       .sink { [weak self] _ in
         Log.info("NSWorkspace.screensDidWakeNotification")
         self?.scheduleUnlockCheck(
-          reason: "screensDidWake", openCalendarIfNoEvents: true, showEventsIfAny: true)
+          reason: "screensDidWake", openCalendarIfNoEvents: true, showEventsIfAny: true,
+          autoHideEventsAfter: 10)
       }
       .store(in: &cancellables)
 
@@ -53,7 +71,8 @@ final class AppController: NSObject, ObservableObject {
         .sink { [weak self] _ in
           Log.info("NSWorkspace.didWakeNotification")
           self?.scheduleUnlockCheck(
-            reason: "didWake", openCalendarIfNoEvents: true, showEventsIfAny: true)
+            reason: "didWake", openCalendarIfNoEvents: true, showEventsIfAny: true,
+            autoHideEventsAfter: 10)
         }
         .store(in: &cancellables)
     }
@@ -66,7 +85,8 @@ final class AppController: NSObject, ObservableObject {
       ) { [weak self] _ in
         Log.info("Distributed com.apple.screenIsUnlocked")
         self?.scheduleUnlockCheck(
-          reason: "screenIsUnlocked", openCalendarIfNoEvents: true, showEventsIfAny: true)
+          reason: "screenIsUnlocked", openCalendarIfNoEvents: true, showEventsIfAny: true,
+          autoHideEventsAfter: 10)
       }
     )
     distributedObservers.append(
@@ -96,7 +116,8 @@ final class AppController: NSObject, ObservableObject {
   }
 
   private func scheduleUnlockCheck(
-    reason: String, openCalendarIfNoEvents: Bool, showEventsIfAny: Bool
+    reason: String, openCalendarIfNoEvents: Bool, showEventsIfAny: Bool,
+    autoHideEventsAfter: TimeInterval? = 10
   ) {
     scheduledCheck?.cancel()
     let item = DispatchWorkItem { [weak self] in
@@ -105,7 +126,8 @@ final class AppController: NSObject, ObservableObject {
         reason: reason,
         openCalendarIfNoEvents: openCalendarIfNoEvents,
         exitOnEvent: false,
-        showEventsIfAny: showEventsIfAny
+        showEventsIfAny: showEventsIfAny,
+        autoHideEventsAfter: autoHideEventsAfter
       )
     }
     scheduledCheck = item
@@ -114,7 +136,8 @@ final class AppController: NSObject, ObservableObject {
   }
 
   private func performCheck(
-    reason: String, openCalendarIfNoEvents: Bool, exitOnEvent: Bool, showEventsIfAny: Bool
+    reason: String, openCalendarIfNoEvents: Bool, exitOnEvent: Bool, showEventsIfAny: Bool,
+    autoHideEventsAfter: TimeInterval? = 10
   ) {
     Log.info("performCheck: checking current events reason=\(reason)")
     calendarManager.fetchCurrentEvents { [weak self] events in
@@ -132,7 +155,8 @@ final class AppController: NSObject, ObservableObject {
                 reason: "floatingPromptCheckButton",
                 openCalendarIfNoEvents: false,
                 exitOnEvent: false,
-                showEventsIfAny: true
+                showEventsIfAny: true,
+                autoHideEventsAfter: nil
               )
             }
           )
@@ -148,7 +172,7 @@ final class AppController: NSObject, ObservableObject {
 
           if showEventsIfAny {
             // Show current events in the same floating window (no extra overlay window).
-            self.windowManager.showFloatingEvents(events, autoHideAfter: 10)
+            self.windowManager.showFloatingEvents(events, autoHideAfter: autoHideEventsAfter)
           } else {
             // For periodic checks: if there are events, don't show any UI.
             self.windowManager.hideFloatingWindow()

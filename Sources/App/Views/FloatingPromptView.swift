@@ -52,6 +52,7 @@ extension Color {
 struct FloatingPromptView: View {
     @ObservedObject var model: FloatingPromptModel
     let onCheck: () -> Void
+    let onClose: (() -> Void)?
 
     var body: some View {
         ZStack {
@@ -102,8 +103,14 @@ struct FloatingPromptView: View {
             // Main content
             if model.currentEvents.isEmpty {
                 NoEventsView(onCheck: onCheck)
+                    .environmentObject(model)
             } else if let event = model.currentEvents.first {
-                EventView(event: event)
+                EventView(event: event) {
+                    model.lastCreatedTaskTitle = event.title ?? "当前计划"
+                    model.onEventCreated?()
+                } onClose: {
+                    onClose?()
+                }
             }
 
             // Time display
@@ -137,6 +144,14 @@ struct FloatingPromptView: View {
 struct NoEventsView: View {
     let onCheck: () -> Void
     @State private var appeared = false
+    @State private var eventTitle = ""
+    @State private var startHour = Calendar.current.component(.hour, from: Date())
+    @State private var startMinute = Calendar.current.component(.minute, from: Date())
+    @State private var endHour = Calendar.current.component(.hour, from: Date().addingTimeInterval(3600))
+    @State private var endMinute = Calendar.current.component(.minute, from: Date().addingTimeInterval(3600))
+    @State private var showingCreationSuccess = false
+    @State private var errorMessage: String?
+    @EnvironmentObject var model: FloatingPromptModel
 
     var body: some View {
         ZStack {
@@ -169,10 +184,146 @@ struct NoEventsView: View {
                     .animation(.easeOut(duration: 0.6).delay(0.1), value: appeared)
 
                 Spacer()
-                    .frame(minHeight: 40)
+                    .frame(minHeight: 30)
+
+                // 快速创建日程区域
+                VStack(spacing: 16) {
+                    // 时间选择器
+                    HStack(spacing: 20) {
+                        // 开始时间
+                        VStack(spacing: 8) {
+                            Text("开始时间")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.stone600)
+                            HStack(spacing: 8) {
+                                Picker("", selection: $startHour) {
+                                    ForEach(0..<24) { hour in
+                                        Text(String(format: "%02d", hour)).tag(hour)
+                                    }
+                                }
+                                .frame(width: 60)
+                                .labelsHidden()
+                                Text(":")
+                                    .foregroundColor(.stone500)
+                                Picker("", selection: $startMinute) {
+                                    ForEach(0..<60) { minute in
+                                        Text(String(format: "%02d", minute)).tag(minute)
+                                    }
+                                }
+                                .frame(width: 60)
+                                .labelsHidden()
+                            }
+                        }
+
+                        Text("→")
+                            .foregroundColor(.stone300)
+                            .font(.system(size: 18))
+
+                        // 结束时间
+                        VStack(spacing: 8) {
+                            Text("结束时间")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.stone600)
+                            HStack(spacing: 8) {
+                                Picker("", selection: $endHour) {
+                                    ForEach(0..<24) { hour in
+                                        Text(String(format: "%02d", hour)).tag(hour)
+                                    }
+                                }
+                                .frame(width: 60)
+                                .labelsHidden()
+                                Text(":")
+                                    .foregroundColor(.stone500)
+                                Picker("", selection: $endMinute) {
+                                    ForEach(0..<60) { minute in
+                                        Text(String(format: "%02d", minute)).tag(minute)
+                                    }
+                                }
+                                .frame(width: 60)
+                                .labelsHidden()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                    .background(Color.white.opacity(0.15))
+                    .cornerRadius(12)
+
+                    // 任务输入框
+                    TextField("输入你要做的事情...", text: $eventTitle)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 16))
+                        .foregroundColor(.stone800)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 14)
+                        .background(Color.white.opacity(0.9))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.sage200, lineWidth: 1)
+                        )
+
+                    // 创建按钮
+                    Button(action: createEvent) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("创建日程")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            LinearGradient(
+                                colors: eventTitle.isEmpty ? [.stone300, .stone400] : [.sage500, .sage600],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(12)
+                        .shadow(color: eventTitle.isEmpty ? .clear : .sage500.opacity(0.25), radius: 15, x: 0, y: 4)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(eventTitle.isEmpty)
+                }
+                .frame(maxWidth: 500)
+                .padding(.horizontal, 40)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 20)
+                .animation(.easeOut(duration: 0.6).delay(0.15), value: appeared)
+
+                Spacer()
+                    .frame(minHeight: 20)
 
                 // 按钮组
                 HStack(spacing: 20) {
+                    // 进入专注模式按钮
+                    Button(action: {
+                        model.onEventCreated?()
+                    }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "pencil.and.outline")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("进入专注模式")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 18)
+                        .background(
+                            LinearGradient(
+                                colors: [.purple.opacity(0.7), .blue.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(14)
+                        .shadow(color: .purple.opacity(0.25), radius: 15, x: 0, y: 4)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
+                    .buttonStyle(.plain)
+
                     // 打开日历按钮
                     Button(action: {
                         NSWorkspace.shared.open(URL(string: "x-apple-reminderkit://")!)
@@ -238,12 +389,78 @@ struct NoEventsView: View {
         .onAppear {
             appeared = true
         }
+        .alert("无法创建日程", isPresented: Binding(get: {
+            errorMessage != nil
+        }, set: { isPresented in
+            if !isPresented {
+                errorMessage = nil
+            }
+        })) {
+            Button("知道了", role: .cancel) {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+
+    private func createEvent() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        var startComponents = DateComponents()
+        startComponents.year = calendar.component(.year, from: today)
+        startComponents.month = calendar.component(.month, from: today)
+        startComponents.day = calendar.component(.day, from: today)
+        startComponents.hour = startHour
+        startComponents.minute = startMinute
+
+        var endComponents = DateComponents()
+        endComponents.year = calendar.component(.year, from: today)
+        endComponents.month = calendar.component(.month, from: today)
+        endComponents.day = calendar.component(.day, from: today)
+        endComponents.hour = endHour
+        endComponents.minute = endMinute
+
+        guard let startDate = calendar.date(from: startComponents),
+              let endDate = calendar.date(from: endComponents),
+              endDate > startDate else {
+            errorMessage = "结束时间必须晚于开始时间。"
+            return
+        }
+
+        let calendarManager = CalendarManager()
+        calendarManager.createEvent(title: eventTitle, startDate: startDate, endDate: endDate) { success, error in
+            if let error {
+                Log.error("Create event failed: \(error.localizedDescription)")
+            }
+
+            if success {
+                DispatchQueue.main.async {
+                    // 保存任务标题
+                    self.model.lastCreatedTaskTitle = self.eventTitle
+                    self.showingCreationSuccess = true
+                    self.eventTitle = ""
+
+                    // 触发专注模式
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.model.onEventCreated?()
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = error?.localizedDescription ?? "创建失败，请检查日历权限和默认日历设置。"
+                }
+            }
+        }
     }
 }
 
 // MARK: - Event View
 struct EventView: View {
     let event: EKEvent
+    let onFocus: () -> Void
+    let onClose: () -> Void
     @State private var appeared = false
 
     var body: some View {
@@ -303,7 +520,7 @@ struct EventView: View {
                 // Remaining time
                 HStack {
                     Spacer()
-                    Text("还剩 \(remainingTimeString)")
+                    Text("还剩 ")
                         .foregroundColor(.secondary)
                     + Text(remainingTimeString)
                         .foregroundColor(.coral600)
@@ -312,6 +529,41 @@ struct EventView: View {
                 }
                 .font(.system(size: 14))
                 .padding(.top, 8)
+
+                Button(action: onFocus) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "pencil.and.outline")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("继续专注 / 打开写作窗口")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [.sage500, .sage600],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(12)
+                    .shadow(color: .sage500.opacity(0.25), radius: 12, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
+
+                Button(action: onClose) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "xmark.circle")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("关闭主页")
+                            .font(.system(size: 15, weight: .medium))
+                    }
+                    .foregroundColor(.stone600)
+                    .padding(.top, 4)
+                }
+                .buttonStyle(.plain)
             }
             .frame(maxWidth: 700)
             .padding(.horizontal, 40)
