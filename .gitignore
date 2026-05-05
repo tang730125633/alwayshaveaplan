@@ -18,3 +18,4 @@ DerivedData/
 # IDEs
 .vscode/
 .idea/
+*.dmg
