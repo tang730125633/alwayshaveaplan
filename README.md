@@ -19,24 +19,45 @@
 
 ### 为什么要做 Obsidian 联动？
 
-我在 Obsidian 里维护着一套日记系统：按年 → 月 → 日归档，每天的日记格式固定，其中有一栏叫**「今日记录」**，用来沉淀每段专注时间里写下的东西。
+我在 Obsidian 里维护着一套日记系统：按年 → 月 → 日归档，每天的日记包含三个固定部分：
 
-**问题**：我几乎不会主动打开 Obsidian 去写日记。
+---
 
-**解法**：让日记内容主动找上我。
+**📋 完整的每日循环**
 
-AlwaysHaveAPlan 的专注模式就是这个解法的核心——
+```
+今日记录  ←  AlwaysHaveAPlan 被动触发，主动书写
+今日复盘  ←  AI（OpenClaw）自动串联，生成洞察
+明日计划  ←  AI 定时推送，早晨唤醒前一天的意图
+```
 
-1. **强制弹出，降低门槛**  
-   每次进入专注模式时，系统弹出一个全屏书写空间。标题就是你当前在做的事，文本框就是你这段时间的思考记录。不需要主动打开 Obsidian，不需要找文件夹，直接写就好。
+---
 
-2. **自动归档到 Obsidian 日记**  
-   关闭专注窗口后，这段内容会自动写入当天的 Obsidian 日记文件（本地 Markdown）。Obsidian 的 vault 本质是本地文件系统，可以直接读写，无需插件。
+**① 今日记录 — 系统催你写，你只管写**
 
-3. **碎片积累，回溯有迹可循**  
-   每次打开 Obsidian，过去每段专注时间写下的东西都完整保存在那里。写作习惯不再依赖意志力，而是系统的副产品。
+每次进入专注模式，全屏书写空间主动弹出。标题是你正在做的事，文本框是这段时间的思考。关闭后自动写入当天 Obsidian 日记文件，带时间戳、专注时长、来源标记。
 
-> 这个设计的本质是：**把「写日记」这件事，从一个需要主动触发的任务，变成专注工作的自然结果。**
+你不需要主动打开 Obsidian，也不需要找文件夹。**系统被动催促你，你主动完成书写。**
+
+**② 今日复盘 — AI 把碎片串成故事**
+
+到了傍晚，OpenClaw 读取今日所有专注记录，把上午/下午/晚上的内容串联成一段完整的复盘：今天注意力集中在哪里、时间花在了什么上、哪些事情做了哪些没做。
+
+复盘是 AI 生成的，但原始素材全部来自你自己。**这是一种真正以你为中心的 AI 协作。**
+
+**③ 明日计划 — 定时推送，早晨有迹可循**
+
+利用 OpenClaw 的 Cron 定时功能，每天早晨收到一份报告：昨天做了什么、今天可能要做什么。随着时间积累，AI 会越来越了解你的节奏和习惯。
+
+---
+
+**实际效果（Obsidian 截图）**
+
+![Obsidian 日记与 AlwaysHaveAPlan 联动效果](screenshots/screenshot-obsidian.png)
+
+*左侧：按年/月/日归档的 Obsidian 结构；右侧：AlwaysHaveAPlan 自动写入的专注记录（带时间戳）+ AI 生成的今日复盘*
+
+> 核心理念：**把「写日记」从需要意志力的任务变成专注工作的自然结果；把 AI 复盘从通用建议变成真正了解你的个人洞察。**
 
 ---
 
@@ -161,24 +182,45 @@ swift run
 
 ### Why Obsidian Integration?
 
-I keep a daily journal in Obsidian — organized by year → month → day, with a fixed template for each entry. One section is called **"Focus Log"**, where I capture thoughts from each focused work session.
+I keep a daily journal in Obsidian — organized by year → month → day. Each day's entry has three fixed sections:
 
-**The problem**: I almost never open Obsidian voluntarily to write.
+---
 
-**The solution**: Make the journal come to me.
+**📋 The Daily Loop**
 
-That's what Focus Mode is built around:
+```
+Focus Log     ←  AlwaysHaveAPlan prompts you, you just write
+Daily Review  ←  AI (OpenClaw) stitches sessions into insights
+Tomorrow Plan ←  AI sends a morning digest, you wake up with context
+```
 
-1. **Forced prompt, zero friction**  
-   Every time you enter Focus Mode, a full-screen writing space appears. The title is whatever task you set, and the text area is where your thoughts go. No need to navigate to a file — just write.
+---
 
-2. **Auto-saved to your Obsidian daily note**  
-   When you close the session, the content is automatically written into that day's Obsidian journal file (plain Markdown on disk). Obsidian's vault is just a local folder — no plugin required, just direct file I/O.
+**① Focus Log — the system nudges you, you do the writing**
 
-3. **Compounding record, effortless review**  
-   Every time you open Obsidian, every focused session you've had is already there. The journaling habit stops depending on willpower and becomes a natural byproduct of doing focused work.
+Every time you enter Focus Mode, a full-screen writing space appears. The title is whatever you're working on; the text area captures your thoughts. When you close the session, the content is automatically written into that day's Obsidian journal file — with timestamp, duration, and source tag.
 
-> The core idea: **turn "writing a journal" from a task you have to remember, into something that just happens when you work.**
+You never have to open Obsidian or navigate to a folder. **The system passively prompts you; you actively write.**
+
+**② Daily Review — AI turns fragments into a narrative**
+
+In the evening, OpenClaw reads all of today's focus sessions and stitches them into a coherent summary: where your attention went, what you actually worked on, what got done and what didn't.
+
+The review is AI-generated, but every word of raw material came from you. **This is AI collaboration that's genuinely centered on you.**
+
+**③ Tomorrow's Plan — scheduled push, morning context**
+
+Using OpenClaw's cron feature, you receive a morning report: what you did yesterday, what's likely ahead today. Over time, the AI develops a real sense of your rhythm and habits.
+
+---
+
+**Live example (Obsidian screenshot)**
+
+![Obsidian journal with AlwaysHaveAPlan integration](screenshots/screenshot-obsidian.png)
+
+*Left: year/month/day archive in Obsidian. Right: focus sessions auto-written by AlwaysHaveAPlan (with timestamps) + AI-generated daily review.*
+
+> The core idea: **make journaling a side effect of focused work, and make AI reflection something that actually knows you.**
 
 ---
 
