@@ -1,8 +1,204 @@
-# Always Have a Plan ✨
+# AlwaysHaveAPlan
 
-> 🌫️ **毛玻璃效果增强版** - 让每一刻都有计划，成为更好的自己
+> A minimalist macOS app that keeps you intentional — every time you unlock your screen.
 
-[English](#english) | [中文](#中文)
+[中文](#中文) | [English](#english)
+
+---
+
+## 中文
+
+### 这是什么？
+
+**AlwaysHaveAPlan** 是一款 macOS 专注工具。它在两个场景下默默守护你的注意力：
+
+1. **解锁屏幕时** — 浮窗弹出，提醒你当前日历事项或用一个深刻的问题唤醒自我觉察
+2. **进入专注模式时** — 沉浸式全屏书写空间，搭配粒子动效背景，帮你深度投入单一任务
+
+---
+
+### 截图预览
+
+**浮窗提示 — 解锁时自动弹出**
+
+![浮窗提示](screenshots/screenshot-prompt.png)
+
+**专注模式 — 沉浸式书写空间**
+
+![专注模式](screenshots/screenshot-focus-1.png)
+
+![专注模式（毛玻璃调节）](screenshots/screenshot-focus-2.png)
+
+---
+
+### 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| 🔓 解锁触发 | 解锁或唤醒 Mac 时自动弹出提醒 |
+| 📅 日历集成 | 读取系统日历，实时显示当前事项和进度 |
+| 🎯 专注模式 | 全屏沉浸书写空间，番茄计时器内置 |
+| ❄️ 粒子背景 | 雪/雨粒子动效，可调密度与速度 |
+| 🌫️ 毛玻璃卡片 | 卡片透明度、边框、背景模糊均可实时调节 |
+| ⌨️ 全局热键 | `Control+Shift+Command+O/F` 随时唤起，无需切换应用 |
+| 🔊 环境音效 | 内置环境音量控制，专注时减少干扰 |
+
+---
+
+### 使用方式
+
+**解锁提示**
+- 锁屏（`Control+Command+Q`）后解锁，浮窗自动弹出
+- 有日历事项时显示当前进度，无事项时显示觉察提问
+
+**专注模式**
+- 全局热键 `Control+Shift+Command+F` 直接进入
+- 或在浮窗点击进入专注
+- 底部控制条 hover 后调节粒子/清晰度/玻璃感/音量
+- 左上角字体面板随时切换字型和字号
+
+---
+
+### 安装
+
+#### 从源码构建
+
+```sh
+git clone https://github.com/tang730125633/alwayshaveaplan.git
+cd alwayshaveaplan
+
+# 构建 release 版
+./build-release.sh
+
+# 复制到应用目录
+cp -r run/release/AlwaysHaveAPlan.app /Applications/
+```
+
+#### 开发模式
+
+```sh
+swift run
+```
+
+**系统要求**：macOS 14.0+，需授予日历访问权限
+
+---
+
+### 技术栈
+
+- **Swift + SwiftUI** — macOS 原生开发
+- **Carbon API** — 系统级全局热键注册
+- **EventKit** — 系统日历集成
+- **NSVisualEffectView** — 原生毛玻璃效果
+- **TimelineView + Canvas** — 粒子动效驱动
+- **DistributedNotificationCenter** — 解锁事件监听
+
+---
+
+### 更新日志
+
+**v1.2.0** (2026-05-05)
+- ⌨️ 全局热键支持（`Control+Shift+Command+O/F`），无需聚焦应用
+- ❄️ 粒子尺寸和速度大幅提升，视觉更有张力
+- 🌫️ 背景清晰度控制重做（滑到最右 = 最清晰）
+- 💎 毛玻璃卡片边框加强，极低透明度时保留可见边界和淡灰底
+- 🎛️ 底部控制条 hover 逻辑修复，只在鼠标靠近时浮现
+
+**v1.1.0** (2026-02)
+- 添加专注模式全屏书写空间
+- 番茄计时器、字体选择器、环境音效
+
+**v1.0.0**
+- 解锁触发 + 日历集成 + 毛玻璃浮窗
+
+---
+
+### 致谢
+
+基于 [ChrisZou/alwayshaveaplan](https://github.com/ChrisZou/alwayshaveaplan) 进行大幅扩展与重设计。感谢原作者提供的基础框架。
+
+---
+
+### License
+
+[MIT](LICENSE)
+
+---
+
+## English
+
+### What is this?
+
+**AlwaysHaveAPlan** is a minimalist macOS focus tool. It shows up in two moments:
+
+1. **On screen unlock** — A floating overlay reminds you of your current calendar event or asks a grounding question when you have nothing scheduled
+2. **In Focus Mode** — A full-screen immersive writing space with animated particle backgrounds, helping you go deep on one thing
+
+---
+
+### Screenshots
+
+**Floating Prompt — appears on unlock**
+
+![Floating Prompt](screenshots/screenshot-prompt.png)
+
+**Focus Mode — immersive writing space**
+
+![Focus Mode](screenshots/screenshot-focus-1.png)
+
+![Focus Mode (glass controls)](screenshots/screenshot-focus-2.png)
+
+---
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔓 Unlock Trigger | Auto-shows on screen unlock or wake |
+| 📅 Calendar Integration | Reads system calendar, shows live event progress |
+| 🎯 Focus Mode | Full-screen writing space with Pomodoro timer |
+| ❄️ Particle Background | Snow/rain particles with adjustable density |
+| 🌫️ Glass Card | Real-time opacity, border, and blur controls |
+| ⌨️ Global Hotkeys | `Control+Shift+Cmd+O/F` work system-wide |
+| 🔊 Ambient Audio | Built-in volume control for focus sessions |
+
+---
+
+### Installation
+
+#### Build from source
+
+```sh
+git clone https://github.com/tang730125633/alwayshaveaplan.git
+cd alwayshaveaplan
+./build-release.sh
+cp -r run/release/AlwaysHaveAPlan.app /Applications/
+```
+
+**Requirements**: macOS 14.0+, Calendar permission required
+
+---
+
+### Tech Stack
+
+- **Swift + SwiftUI** — Native macOS app
+- **Carbon API** — System-level global hotkeys
+- **EventKit** — Calendar integration
+- **NSVisualEffectView** — Native frosted glass
+- **TimelineView + Canvas** — Particle animation engine
+
+---
+
+### Credits
+
+Built on top of [ChrisZou/alwayshaveaplan](https://github.com/ChrisZou/alwayshaveaplan). Thanks to the original author for the solid foundation.
+
+---
+
+### License
+
+[MIT](LICENSE)
+
 
 ---
 
