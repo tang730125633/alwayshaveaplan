@@ -1,6 +1,7 @@
 # Build artifacts
 .build/
 run/
+*.dmg
 
 # macOS
 .DS_Store

@@ -2,7 +2,23 @@
 
 > A minimalist macOS app that keeps you intentional — every time you unlock your screen.
 
-[中文](#中文) | [English](#english)
+[快速安装](#快速安装) | [中文](#中文) | [English](#english)
+
+## 快速安装
+
+推荐给用户和 AI 的安装入口：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/tang730125633/alwayshaveaplan/main/install.sh | bash
+```
+
+这个脚本会优先下载 GitHub Release 里的 DMG；如果没有可用 Release，会自动回退到源码构建并安装到 `/Applications`。
+
+系统要求：macOS 14.0+。首次启动时需要授予日历访问权限。
+
+给 AI 的更明确安装说明见 [INSTALL_FOR_AI.md](INSTALL_FOR_AI.md)。
+
+发布新版本时，推送 `v*` tag 会自动生成 GitHub Release 安装包。
 
 ---
 
