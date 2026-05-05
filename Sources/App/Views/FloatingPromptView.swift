@@ -107,7 +107,7 @@ struct FloatingPromptView: View {
             } else if let event = model.currentEvents.first {
                 EventView(event: event) {
                     model.lastCreatedTaskTitle = event.title ?? "当前计划"
-                    model.onEventCreated?()
+                    model.onOpenFocus?()
                 } onClose: {
                     onClose?()
                 }
@@ -300,7 +300,8 @@ struct NoEventsView: View {
                 HStack(spacing: 20) {
                     // 进入专注模式按钮
                     Button(action: {
-                        model.onEventCreated?()
+                        model.lastCreatedTaskTitle = eventTitle.isEmpty ? "此刻最重要的事" : eventTitle
+                        model.onEnterForcedFocus?()
                     }) {
                         HStack(spacing: 10) {
                             Image(systemName: "pencil.and.outline")
@@ -436,15 +437,15 @@ struct NoEventsView: View {
             }
 
             if success {
+                let createdTitle = eventTitle
                 DispatchQueue.main.async {
-                    // 保存任务标题
-                    self.model.lastCreatedTaskTitle = self.eventTitle
+                    self.model.lastCreatedTaskTitle = createdTitle
                     self.showingCreationSuccess = true
                     self.eventTitle = ""
 
-                    // 触发专注模式
+                    // 创建成功后刷新到当前日程页，由用户决定是否进入专注模式。
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self.model.onEventCreated?()
+                        onCheck()
                     }
                 }
             } else {

@@ -8,6 +8,7 @@ final class CalendarManager {
     enum CalendarError: LocalizedError {
         case accessDenied
         case noWritableCalendar
+        case calendarProvisionFailed
 
         var errorDescription: String? {
             switch self {
@@ -15,7 +16,51 @@ final class CalendarManager {
                 return "没有日历访问权限。请在 系统设置 > 隐私与安全性 > 日历 中允许 AlwaysHaveAPlan 访问。"
             case .noWritableCalendar:
                 return "没有可写入的日历。请先在系统日历中启用一个可写日历账户。"
+            case .calendarProvisionFailed:
+                return "无法自动创建可写入日历，请检查系统日历账户设置。"
             }
+        }
+    }
+
+    private func preferredWritableCalendar() -> EKCalendar? {
+        if let defaultCalendar = store.defaultCalendarForNewEvents,
+           defaultCalendar.allowsContentModifications {
+            return defaultCalendar
+        }
+
+        if let existingManagedCalendar = store.calendars(for: .event).first(where: {
+            $0.title == Self.targetCalendarTitle && $0.allowsContentModifications
+        }) {
+            return existingManagedCalendar
+        }
+
+        return store.calendars(for: .event).first(where: { $0.allowsContentModifications })
+    }
+
+    private func provisionWritableCalendarIfNeeded() throws -> EKCalendar {
+        if let calendar = preferredWritableCalendar() {
+            return calendar
+        }
+
+        let sources = store.sources
+        let preferredSource = sources.first(where: { $0.sourceType == .local })
+            ?? sources.first(where: { $0.sourceType == .calDAV || $0.sourceType == .exchange })
+
+        guard let preferredSource else {
+            throw CalendarError.noWritableCalendar
+        }
+
+        let calendar = EKCalendar(for: .event, eventStore: store)
+        calendar.title = Self.targetCalendarTitle
+        calendar.source = preferredSource
+
+        do {
+            try store.saveCalendar(calendar, commit: true)
+            Log.info("Created writable calendar title=\(calendar.title) source=\(preferredSource.title) type=\(preferredSource.sourceType.rawValue)")
+            return calendar
+        } catch {
+            Log.error("Failed to provision writable calendar: \(error)")
+            throw CalendarError.calendarProvisionFailed
         }
     }
 
@@ -130,18 +175,8 @@ final class CalendarManager {
         event.startDate = startDate
         event.endDate = endDate
 
-        if let defaultCalendar = store.defaultCalendarForNewEvents {
-            event.calendar = defaultCalendar
-        } else if let fallbackCalendar = store.calendars(for: .event).first(where: { $0.allowsContentModifications }) {
-            event.calendar = fallbackCalendar
-        } else {
-            let error = CalendarError.noWritableCalendar
-            Log.info("Failed to create event: \(error.localizedDescription)")
-            completion(false, error)
-            return
-        }
-
         do {
+            event.calendar = try provisionWritableCalendarIfNeeded()
             try store.save(event, span: .thisEvent)
             Log.info("Event created: \(title) [\(startDate) - \(endDate)]")
             completion(true, nil)

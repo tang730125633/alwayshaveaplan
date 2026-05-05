@@ -3,6 +3,7 @@ import Combine
 
 final class AppController: NSObject, ObservableObject {
   private let calendarManager = CalendarManager()
+  private let obsidianDailyNoteService = ObsidianDailyNoteService()
   private var cancellables = Set<AnyCancellable>()
   private let windowManager = WindowManager()
   private var distributedObservers: [NSObjectProtocol] = []
@@ -11,6 +12,7 @@ final class AppController: NSObject, ObservableObject {
 
   override init() {
     super.init()
+    obsidianDailyNoteService.normalizeTodayNoteIfNeeded()
     setupUnlockObservers()
     startPeriodicChecks()
 

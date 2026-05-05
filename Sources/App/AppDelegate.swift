@@ -1,9 +1,20 @@
 import AppKit
 import ServiceManagement
+import Carbon
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appController: AppController?
     private var statusItem: NSStatusItem?
+    private var globalHotKeyManager: GlobalHotKeyManager?
+
+    private let openMainWindowShortcut = GlobalHotKeyManager.Shortcut(
+        keyCode: UInt32(kVK_ANSI_O),
+        modifiers: [.command, .shift, .control]
+    )
+    private let openFocusModeShortcut = GlobalHotKeyManager.Shortcut(
+        keyCode: UInt32(kVK_ANSI_F),
+        modifiers: [.command, .shift, .control]
+    )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Log.info("Application did finish launching. bundleURL=\(Bundle.main.bundleURL.path)")
@@ -31,7 +42,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         disableCommandQ()
 
         appController = AppController()
+        setupGlobalHotKeys()
         setupMenuBar()
+    }
+
+    private func setupGlobalHotKeys() {
+        let hotKeyManager = GlobalHotKeyManager()
+        hotKeyManager.register(.openMainWindow, shortcut: openMainWindowShortcut) { [weak self] in
+            self?.openMainWindow()
+        }
+        hotKeyManager.register(.openFocusMode, shortcut: openFocusModeShortcut) { [weak self] in
+            self?.openFocusMode()
+        }
+        globalHotKeyManager = hotKeyManager
     }
 
     private func setupMenuBar() {
@@ -42,12 +65,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "打开主窗口", action: #selector(openMainWindow), keyEquivalent: "o"))
-        menu.addItem(NSMenuItem(title: "进入专注模式", action: #selector(openFocusMode), keyEquivalent: "f"))
+        menu.addItem(makeMenuItem(title: "打开主窗口", action: #selector(openMainWindow), keyEquivalent: "o", shortcut: openMainWindowShortcut))
+        menu.addItem(makeMenuItem(title: "进入专注模式", action: #selector(openFocusMode), keyEquivalent: "f", shortcut: openFocusModeShortcut))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem?.menu = menu
+    }
+
+    private func makeMenuItem(
+        title: String,
+        action: Selector,
+        keyEquivalent: String,
+        shortcut: GlobalHotKeyManager.Shortcut
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+        item.keyEquivalentModifierMask = shortcut.modifiers
+        item.target = self
+        return item
     }
 
     @objc private func openMainWindow() {

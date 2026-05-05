@@ -5,18 +5,24 @@ import EventKit
 final class WindowManager: NSObject, NSWindowDelegate {
     private var floatingWindowController: NSWindowController?
     private let floatingModel = FloatingPromptModel()
+    private let obsidianDailyNoteService = ObsidianDailyNoteService()
     private var autoHideWorkItem: DispatchWorkItem?
     private var canCloseWindow = false
     private var focusModeWindowController: NSWindowController?
+    private var focusModeCanClose = true
+    private var focusSessionState: FocusSessionState?
+    private var didPersistFocusSession = false
 
     func showFloatingPrompt(onCheck: @escaping () -> Void) {
         autoHideWorkItem?.cancel()
         autoHideWorkItem = nil
         canCloseWindow = false
 
-        // 设置创建日程后的回调
-        floatingModel.onEventCreated = { [weak self] in
+        floatingModel.onOpenFocus = { [weak self] in
             self?.showFocusMode()
+        }
+        floatingModel.onEnterForcedFocus = { [weak self] in
+            self?.showFocusMode(forceMinimumSeconds: 25 * 60)
         }
 
         if floatingWindowController == nil {
@@ -120,6 +126,10 @@ final class WindowManager: NSObject, NSWindowDelegate {
             return canCloseWindow
         }
 
+        if sender === focusModeWindowController?.window {
+            return focusModeCanClose
+        }
+
         return true
     }
 
@@ -127,7 +137,9 @@ final class WindowManager: NSObject, NSWindowDelegate {
         guard let window = notification.object as? NSWindow else { return }
 
         if window === focusModeWindowController?.window {
+            persistFocusSessionIfNeeded()
             focusModeWindowController = nil
+            focusSessionState = nil
         }
 
         if window === floatingWindowController?.window, canCloseWindow {
@@ -135,18 +147,24 @@ final class WindowManager: NSObject, NSWindowDelegate {
         }
     }
 
-    func showFocusMode() {
+    func showFocusMode(forceMinimumSeconds: Int? = nil) {
+        focusModeCanClose = forceMinimumSeconds == nil
+
         if let window = focusModeWindowController?.window {
             Log.info("Reusing existing focus mode window")
+            window.standardWindowButton(.closeButton)?.isHidden = !focusModeCanClose
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
+            floatingWindowController?.window?.orderOut(nil)
             return
         }
 
-        let taskTitle = floatingModel.lastCreatedTaskTitle
-        let hosting = NSHostingView(rootView: FocusModeView(taskTitle: taskTitle, onExit: { [weak self] in
-            self?.hideFocusMode()
-        }))
+        let initialFocusSeconds = forceMinimumSeconds ?? 25 * 60
+        let taskTitle = floatingModel.lastCreatedTaskTitle.isEmpty ? "此刻最重要的事" : floatingModel.lastCreatedTaskTitle
+        let session = FocusSessionState(taskTitle: taskTitle)
+        focusSessionState = session
+        didPersistFocusSession = false
+        let hosting = makeFocusModeHosting(session: session, initialFocusSeconds: initialFocusSeconds)
 
         let screen = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
         let window = NSWindow(
@@ -160,6 +178,7 @@ final class WindowManager: NSObject, NSWindowDelegate {
         window.level = .normal
         window.collectionBehavior = [.canJoinAllSpaces]
         window.isReleasedWhenClosed = false
+        window.standardWindowButton(.closeButton)?.isHidden = !focusModeCanClose
         window.delegate = self
         window.contentView = hosting
 
@@ -179,10 +198,45 @@ final class WindowManager: NSObject, NSWindowDelegate {
     func reopenPrimaryWindow() -> Bool {
         return false
     }
+
+    private func makeFocusModeHosting(session: FocusSessionState, initialFocusSeconds: Int) -> NSHostingView<FocusModeView> {
+        return NSHostingView(
+            rootView: FocusModeView(
+                session: session,
+                initialFocusSeconds: initialFocusSeconds,
+                locksExitUntilTimerEnds: !focusModeCanClose,
+                onExit: { [weak self] in
+                    self?.hideFocusMode()
+                },
+                onMinimumFocusCompleted: { [weak self] in
+                    self?.unlockFocusModeExit()
+                }
+            )
+        )
+    }
+
+    private func unlockFocusModeExit() {
+        focusModeCanClose = true
+        focusModeWindowController?.window?.standardWindowButton(.closeButton)?.isHidden = false
+    }
+
+    private func persistFocusSessionIfNeeded() {
+        guard !didPersistFocusSession, let focusSessionState else { return }
+
+        didPersistFocusSession = true
+        let record = FocusSessionRecord(
+            taskTitle: focusSessionState.taskTitle,
+            noteText: focusSessionState.noteText,
+            startedAt: focusSessionState.startedAt,
+            endedAt: Date()
+        )
+        obsidianDailyNoteService.appendFocusSession(record)
+    }
 }
 
 final class FloatingPromptModel: ObservableObject {
     @Published var currentEvents: [EKEvent] = []
-    var onEventCreated: (() -> Void)?
+    var onOpenFocus: (() -> Void)?
+    var onEnterForcedFocus: (() -> Void)?
     var lastCreatedTaskTitle: String = ""
 }
