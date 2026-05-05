@@ -17,6 +17,29 @@
 
 ---
 
+### 为什么要做 Obsidian 联动？
+
+我在 Obsidian 里维护着一套日记系统：按年 → 月 → 日归档，每天的日记格式固定，其中有一栏叫**「今日记录」**，用来沉淀每段专注时间里写下的东西。
+
+**问题**：我几乎不会主动打开 Obsidian 去写日记。
+
+**解法**：让日记内容主动找上我。
+
+AlwaysHaveAPlan 的专注模式就是这个解法的核心——
+
+1. **强制弹出，降低门槛**  
+   每次进入专注模式时，系统弹出一个全屏书写空间。标题就是你当前在做的事，文本框就是你这段时间的思考记录。不需要主动打开 Obsidian，不需要找文件夹，直接写就好。
+
+2. **自动归档到 Obsidian 日记**  
+   关闭专注窗口后，这段内容会自动写入当天的 Obsidian 日记文件（本地 Markdown）。Obsidian 的 vault 本质是本地文件系统，可以直接读写，无需插件。
+
+3. **碎片积累，回溯有迹可循**  
+   每次打开 Obsidian，过去每段专注时间写下的东西都完整保存在那里。写作习惯不再依赖意志力，而是系统的副产品。
+
+> 这个设计的本质是：**把「写日记」这件事，从一个需要主动触发的任务，变成专注工作的自然结果。**
+
+---
+
 ### 截图预览
 
 **浮窗提示 — 解锁时自动弹出**
@@ -133,6 +156,29 @@ swift run
 
 1. **On screen unlock** — A floating overlay reminds you of your current calendar event or asks a grounding question when you have nothing scheduled
 2. **In Focus Mode** — A full-screen immersive writing space with animated particle backgrounds, helping you go deep on one thing
+
+---
+
+### Why Obsidian Integration?
+
+I keep a daily journal in Obsidian — organized by year → month → day, with a fixed template for each entry. One section is called **"Focus Log"**, where I capture thoughts from each focused work session.
+
+**The problem**: I almost never open Obsidian voluntarily to write.
+
+**The solution**: Make the journal come to me.
+
+That's what Focus Mode is built around:
+
+1. **Forced prompt, zero friction**  
+   Every time you enter Focus Mode, a full-screen writing space appears. The title is whatever task you set, and the text area is where your thoughts go. No need to navigate to a file — just write.
+
+2. **Auto-saved to your Obsidian daily note**  
+   When you close the session, the content is automatically written into that day's Obsidian journal file (plain Markdown on disk). Obsidian's vault is just a local folder — no plugin required, just direct file I/O.
+
+3. **Compounding record, effortless review**  
+   Every time you open Obsidian, every focused session you've had is already there. The journaling habit stops depending on willpower and becomes a natural byproduct of doing focused work.
+
+> The core idea: **turn "writing a journal" from a task you have to remember, into something that just happens when you work.**
 
 ---
 
