@@ -1,5 +1,51 @@
 import SwiftUI
 import AppKit
+import AVFoundation
+
+// MARK: - Ambient Audio Player
+private final class AmbientAudioPlayer: ObservableObject {
+    private var player: AVAudioPlayer?
+    private static let basePath = "/System/Library/AssetsV2/com_apple_MobileAsset_ComfortSoundsAssets/2297555ef14dae8dda5b6eab069356036fd3a3d5.asset/AssetData"
+    // 雨声用 Rain_1（中等），雪声用 Rain_17（最轻柔，模拟飘雪）
+    private static let rainFile = "\(basePath)/Rain_1.m4a"
+    private static let snowFile = "\(basePath)/Rain_17.m4a"
+
+    private var currentFile: String?
+
+    func start(mode: WeatherMode, volume: Double) {
+        let file = mode == .rain ? Self.rainFile : Self.snowFile
+        play(file: file, volume: volume)
+    }
+
+    func switchMode(_ mode: WeatherMode, volume: Double) {
+        let file = mode == .rain ? Self.rainFile : Self.snowFile
+        guard file != currentFile else { return }
+        player?.stop()
+        player = nil
+        play(file: file, volume: volume)
+    }
+
+    func stop() {
+        player?.stop()
+        player = nil
+        currentFile = nil
+    }
+
+    func setVolume(_ volume: Double) {
+        player?.volume = Float(volume)
+    }
+
+    private func play(file: String, volume: Double) {
+        let url = URL(fileURLWithPath: file)
+        guard let p = try? AVAudioPlayer(contentsOf: url) else { return }
+        p.numberOfLoops = -1
+        p.volume = Float(volume)
+        p.prepareToPlay()
+        p.play()
+        player = p
+        currentFile = file
+    }
+}
 
 final class FocusSessionState: ObservableObject {
     let taskTitle: String
@@ -31,6 +77,7 @@ struct FocusModeView: View {
     @State private var toolbarHovered = false
     @State private var fontPanelHovered = false
     @State private var bottomMixerHovered = false
+    @StateObject private var audioPlayer = AmbientAudioPlayer()
     @State private var ambientVolume: Double = 0.7
     @State private var mousePosition: CGPoint = CGPoint(x: 0.5, y: 0.2)
     @State private var isHoveringDeck = false
@@ -71,6 +118,28 @@ struct FocusModeView: View {
 
                 deckGradient
                     .ignoresSafeArea()
+
+                // 暗角：四角压暗，聚焦中心内容区
+                Canvas { context, size in
+                    let gradient = Gradient(stops: [
+                        .init(color: .black.opacity(0.72), location: 0),
+                        .init(color: .black.opacity(0), location: 1)
+                    ])
+                    let r = max(size.width, size.height) * 0.72
+                    for corner in [
+                        CGPoint(x: 0, y: 0),
+                        CGPoint(x: size.width, y: 0),
+                        CGPoint(x: 0, y: size.height),
+                        CGPoint(x: size.width, y: size.height)
+                    ] {
+                        context.fill(
+                            Path(ellipseIn: CGRect(x: corner.x - r, y: corner.y - r, width: r * 2, height: r * 2)),
+                            with: .radialGradient(gradient, center: corner, startRadius: 0, endRadius: r)
+                        )
+                    }
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
                     topRevealZone
@@ -147,8 +216,18 @@ struct FocusModeView: View {
                     mousePosition = CGPoint(x: geometry.size.width * 0.5, y: geometry.size.height * 0.2)
                 }
             }
+            .onAppear {
+                audioPlayer.start(mode: weatherMode, volume: ambientVolume)
+            }
+            .onChange(of: weatherMode) { newMode in
+                audioPlayer.switchMode(newMode, volume: ambientVolume)
+            }
+            .onChange(of: ambientVolume) { newVolume in
+                audioPlayer.setVolume(newVolume)
+            }
             .onDisappear {
                 timer?.invalidate()
+                audioPlayer.stop()
             }
         }
     }

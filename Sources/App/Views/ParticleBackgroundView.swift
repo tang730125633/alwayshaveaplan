@@ -267,7 +267,9 @@ private struct ShaderSnowOverlay: View {
                 let seed = Double(layer * 97 + flake * 37)
                 let randomX = hashed(seed + 0.17)
                 let randomY = hashed(seed + 3.91)
-                let randomSize = hashed(seed + 7.37)
+                let rawSize = hashed(seed + 7.37)
+                // 非线性分布：多数雪花小，少数很大
+                let randomSize = rawSize * rawSize * rawSize + rawSize * 0.15
                 let horizontalNoise = hashed(seed + 11.73)
 
                 var x = randomX * size.width
@@ -275,14 +277,17 @@ private struct ShaderSnowOverlay: View {
                 x += CGFloat((horizontalNoise - 0.5) * 18.0)
                 x += parallaxShift / CGFloat(layerDepth)
 
-                var y = (randomY * size.height) + CGFloat(time * 142.0 * fallSpeed / layerDepth)
+                // 大雪花（randomSize 大）落得更快
+                let sizeSpeedFactor = 0.72 + randomSize * 0.68
+                var y = (randomY * size.height) + CGFloat(time * 195.0 * fallSpeed * sizeSpeedFactor / layerDepth)
                 y.formTruncatingRemainder(dividingBy: size.height + 140)
                 y -= 70
                 y += verticalShift / CGFloat(layerDepth)
 
                 x += CGFloat((y / max(size.height, 1)) * diagonalDrift)
 
-                let baseSize = CGFloat(2.4 + randomSize * 7.9 + Double(layer) * 0.065)
+                // 尺寸分布更宽：最小 1.6，最大可达 14
+                let baseSize = CGFloat(1.6 + randomSize * 12.4 + Double(layer) * 0.065)
                 let width = baseSize * CGFloat(0.92 + softness * 0.26)
                 let height = baseSize * CGFloat(1.14 + softness * 0.42)
                 let alpha = max(0.08, 0.82 / CGFloat(1.0 + 0.045 * Double(layer)) * CGFloat(0.45 + randomX * 0.65))
