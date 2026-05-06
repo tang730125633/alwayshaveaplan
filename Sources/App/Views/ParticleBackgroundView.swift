@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import AVFoundation
 
 // MARK: - Particle Background View
 struct ParticleBackgroundView: View {
@@ -311,86 +312,225 @@ private struct ShaderSnowOverlay: View {
 }
 
 // MARK: - Wallpaper Background
+// MARK: - Video Wallpaper Layer
+private struct VideoWallpaperView: NSViewRepresentable {
+    let url: URL
+    let onReady: () -> Void
+    let onFailed: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onReady: onReady, onFailed: onFailed) }
+
+    func makeNSView(context: Context) -> NSView {
+        let host = NSView()
+        host.wantsLayer = true
+        let item = AVPlayerItem(url: url)
+        let player = AVPlayer(playerItem: item)
+        player.isMuted = true
+        player.actionAtItemEnd = .none
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { _ in player.seek(to: .zero); player.play() }
+        let layer = AVPlayerLayer(player: player)
+        layer.videoGravity = .resizeAspectFill
+        layer.frame = host.bounds
+        host.layer?.addSublayer(layer)
+        context.coordinator.player = player
+        context.coordinator.playerLayer = layer
+        context.coordinator.observe(item: item)
+        player.play()
+        return host
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.playerLayer?.frame = nsView.bounds
+    }
+
+    class Coordinator: NSObject {
+        var player: AVPlayer?
+        var playerLayer: AVPlayerLayer?
+        private var observation: NSKeyValueObservation?
+        private let onReady: () -> Void
+        private let onFailed: () -> Void
+
+        init(onReady: @escaping () -> Void, onFailed: @escaping () -> Void) {
+            self.onReady = onReady
+            self.onFailed = onFailed
+        }
+
+        func observe(item: AVPlayerItem) {
+            observation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+                DispatchQueue.main.async {
+                    switch item.status {
+                    case .readyToPlay: self?.onReady()
+                    case .failed:      self?.onFailed()
+                    default: break
+                    }
+                }
+            }
+        }
+
+        deinit { player?.pause(); observation?.invalidate() }
+    }
+}
+
+// MARK: - Wallpaper Background View
 struct WallpaperBackgroundView: View {
     let mode: WeatherMode
     let blurRadius: Double
     let dimOpacity: Double
     let wallpaperVersion: Int
-    @State private var currentImage: NSImage?
-    private static var cachedImage: NSImage?
-    private static let wallpaperPath = "/Users/tang/Library/Mobile Documents/com~apple~CloudDocs/Desktop/桌面系统项目合集（含壁纸文件）/8k 壁纸带黑框"
+
+    private enum WallpaperAsset {
+        case image(NSImage)
+        case video(URL)
+    }
+
+    private enum LoadingState {
+        case loading
+        case loaded(WallpaperAsset)
+        case failed
+    }
+
+    @State private var loadingState: LoadingState = .loading
+    private static var cachedAsset: WallpaperAsset?
+    private static let wallpaperPath = "/Users/tang/Library/Mobile Documents/com~apple~CloudDocs/泽龙独家壁纸"
 
     var body: some View {
         GeometryReader { geometry in
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: false)) { context in
-                let elapsed = context.date.timeIntervalSinceReferenceDate
-                let xDrift = CGFloat(sin(elapsed / 14.0)) * 28
-                let yDrift = CGFloat(cos(elapsed / 18.0)) * 18
-                let secondaryX = CGFloat(cos(elapsed / 20.0)) * 22
-                let secondaryY = CGFloat(sin(elapsed / 16.0)) * 12
-                let glowOffset = CGFloat(sin(elapsed / 12.0)) * 140
-
-                ZStack {
-                    baseLayer(size: geometry.size)
-                        .offset(x: xDrift, y: yDrift)
-
-                    baseLayer(size: geometry.size)
-                        .scaleEffect(1.08)
-                        .blur(radius: blurRadius + 4)
-                        .opacity(0.18)
-                        .offset(x: secondaryX, y: secondaryY)
-
-                    fogLayer(size: geometry.size, glowOffset: glowOffset)
-
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(dimOpacity * 0.7),
-                            Color.black.opacity(dimOpacity),
-                            Color.black.opacity(dimOpacity + 0.05)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-
-                    RadialGradient(
-                        colors: [
-                            Color.white.opacity(mode == .snow ? 0.10 : 0.06),
-                            Color.clear
-                        ],
-                        center: .top,
-                        startRadius: 20,
-                        endRadius: 620
-                    )
-                    .blendMode(.screen)
-
-                    vignette
+            ZStack {
+                // 背景层
+                switch loadingState {
+                case .loading, .failed:
+                    Color.black
+                case .loaded(let asset):
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: false)) { context in
+                        let elapsed = context.date.timeIntervalSinceReferenceDate
+                        let glowOffset = CGFloat(sin(elapsed / 12.0)) * 140
+                        ZStack {
+                            assetLayer(asset: asset, size: geometry.size, elapsed: elapsed)
+                            fogLayer(size: geometry.size, glowOffset: glowOffset)
+                            LinearGradient(
+                                colors: [
+                                    Color.black.opacity(dimOpacity * 0.7),
+                                    Color.black.opacity(dimOpacity),
+                                    Color.black.opacity(dimOpacity + 0.05)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            RadialGradient(
+                                colors: [
+                                    Color.white.opacity(mode == .snow ? 0.10 : 0.06),
+                                    Color.clear
+                                ],
+                                center: .top,
+                                startRadius: 20,
+                                endRadius: 620
+                            )
+                            .blendMode(.screen)
+                            vignette
+                        }
+                        .clipped()
+                    }
                 }
-                .clipped()
+
+                // 状态覆盖层：加载中 / 失败
+                stateOverlay
             }
         }
-        .onAppear {
-            loadRandomWallpaperIfNeeded()
-        }
+        .onAppear { loadRandom() }
         .onChange(of: wallpaperVersion) { _ in
-            Self.cachedImage = nil
-            currentImage = nil
-            loadRandomWallpaperIfNeeded()
+            Self.cachedAsset = nil
+            withAnimation(.easeIn(duration: 0.2)) { loadingState = .loading }
+            loadRandom()
         }
     }
 
     @ViewBuilder
-    private func baseLayer(size: CGSize) -> some View {
-        if let image = currentImage {
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: size.width * 1.08, height: size.height * 1.08)
-                .blur(radius: blurRadius)
-                .saturation(0.88)
-                .brightness(-0.02)
-        } else {
-            Color.black
+    private var stateOverlay: some View {
+        switch loadingState {
+        case .loading:
+            VStack(spacing: 10) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(0.75)
+                    .tint(Color.white.opacity(0.55))
+                Text("正在加载壁纸…")
+                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            .transition(.opacity)
+        case .failed:
+            VStack(spacing: 14) {
+                Image(systemName: "photo.slash")
+                    .font(.system(size: 26))
+                    .foregroundColor(.white.opacity(0.35))
+                Text("壁纸加载失败")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.45))
+                Button {
+                    Self.cachedAsset = nil
+                    withAnimation { loadingState = .loading }
+                    loadRandom()
+                } label: {
+                    Text("切换下一张")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .transition(.opacity)
+        case .loaded:
+            EmptyView()
         }
+    }
+
+    @ViewBuilder
+    private func assetLayer(asset: WallpaperAsset, size: CGSize, elapsed: TimeInterval) -> some View {
+        switch asset {
+        case .video(let url):
+            VideoWallpaperView(
+                url: url,
+                onReady: { /* 视频就绪，已在播放，无需额外操作 */ },
+                onFailed: {
+                    Self.cachedAsset = nil
+                    withAnimation { loadingState = .failed }
+                }
+            )
+            .frame(width: size.width, height: size.height)
+            .clipped()
+            .saturation(0.88)
+        case .image(let img):
+            let xDrift = CGFloat(sin(elapsed / 14.0)) * 28
+            let yDrift = CGFloat(cos(elapsed / 18.0)) * 18
+            let secondaryX = CGFloat(cos(elapsed / 20.0)) * 22
+            let secondaryY = CGFloat(sin(elapsed / 16.0)) * 12
+            ZStack {
+                imageLayer(img: img, size: size)
+                    .offset(x: xDrift, y: yDrift)
+                imageLayer(img: img, size: size)
+                    .scaleEffect(1.08)
+                    .blur(radius: blurRadius + 4)
+                    .opacity(0.18)
+                    .offset(x: secondaryX, y: secondaryY)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func imageLayer(img: NSImage, size: CGSize) -> some View {
+        Image(nsImage: img)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: size.width * 1.08, height: size.height * 1.08)
+            .blur(radius: blurRadius)
+            .saturation(0.88)
+            .brightness(-0.02)
     }
 
     private func fogLayer(size: CGSize, glowOffset: CGFloat) -> some View {
@@ -400,7 +540,6 @@ struct WallpaperBackgroundView: View {
                 .frame(width: size.width * 0.72, height: size.height * 0.34)
                 .blur(radius: 72)
                 .offset(x: -size.width * 0.12, y: -size.height * 0.22)
-
             Ellipse()
                 .fill(Color(red: 0.72, green: 0.78, blue: 0.82).opacity(0.10))
                 .frame(width: size.width * 0.65, height: size.height * 0.28)
@@ -423,30 +562,46 @@ struct WallpaperBackgroundView: View {
         )
     }
 
-    private func loadRandomWallpaperIfNeeded() {
-        if let cachedImage = Self.cachedImage {
-            currentImage = cachedImage
-            return
-        }
-
+    private func loadRandom() {
         DispatchQueue.global(qos: .userInitiated).async {
-            guard let files = try? FileManager.default.contentsOfDirectory(atPath: Self.wallpaperPath) else {
+            let imageExts: Set<String> = ["png", "jpg", "jpeg", "webp", "heic"]
+            let videoExts: Set<String> = ["mp4", "mov", "m4v"]
+            let fm = FileManager.default
+            var allURLs: [URL] = []
+            if let enumerator = fm.enumerator(
+                at: URL(fileURLWithPath: Self.wallpaperPath),
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) {
+                for case let url as URL in enumerator {
+                    let ext = url.pathExtension.lowercased()
+                    if imageExts.contains(ext) || videoExts.contains(ext) {
+                        allURLs.append(url)
+                    }
+                }
+            }
+            guard let picked = allURLs.randomElement() else {
+                DispatchQueue.main.async { withAnimation { loadingState = .failed } }
                 return
             }
-
-            let imageFiles = files.filter { $0.hasSuffix(".png") || $0.hasSuffix(".jpg") }
-            guard let randomFile = imageFiles.randomElement() else {
-                return
-            }
-
-            let fullPath = "\(Self.wallpaperPath)/\(randomFile)"
-            guard let image = NSImage(contentsOfFile: fullPath) else {
-                return
-            }
-
-            DispatchQueue.main.async {
-                Self.cachedImage = image
-                currentImage = image
+            let ext = picked.pathExtension.lowercased()
+            if videoExts.contains(ext) {
+                // 视频：先展示（VideoWallpaperView 内部会回调 onFailed）
+                let asset = WallpaperAsset.video(picked)
+                DispatchQueue.main.async {
+                    Self.cachedAsset = asset
+                    withAnimation { loadingState = .loaded(asset) }
+                }
+            } else {
+                guard let img = NSImage(contentsOf: picked) else {
+                    DispatchQueue.main.async { withAnimation { loadingState = .failed } }
+                    return
+                }
+                let asset = WallpaperAsset.image(img)
+                DispatchQueue.main.async {
+                    Self.cachedAsset = asset
+                    withAnimation { loadingState = .loaded(asset) }
+                }
             }
         }
     }

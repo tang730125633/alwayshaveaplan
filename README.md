@@ -99,7 +99,7 @@ curl -fsSL https://raw.githubusercontent.com/tang730125633/alwayshaveaplan/main/
 | 📅 日历集成 | 读取系统日历，实时显示当前事项和进度 |
 | 🎯 专注模式 | 全屏沉浸书写空间，番茄计时器内置 |
 | ❄️ 粒子背景 | 雪/雨粒子动效，可调密度与速度 |
-| 🌫️ 毛玻璃卡片 | 卡片透明度、边框、背景模糊均可实时调节 |
+| 🖼️ 自定义壁纸 | 指定本地文件夹作为壁纸池，丢入自己的图片（JPG/PNG）或视频（MP4/MOV），每次进入专注模式随机轮播 |
 | ⌨️ 全局热键 | `Control+Shift+Command+O/F` 随时唤起，无需切换应用 |
 | 🔊 环境音效 | 内置环境音量控制，专注时减少干扰 |
 
@@ -262,7 +262,7 @@ Using OpenClaw's cron feature, you receive a morning report: what you did yester
 | 📅 Calendar Integration | Reads system calendar, shows live event progress |
 | 🎯 Focus Mode | Full-screen writing space with Pomodoro timer |
 | ❄️ Particle Background | Snow/rain particles with adjustable density |
-| 🌫️ Glass Card | Real-time opacity, border, and blur controls |
+| 🖼️ Custom Wallpaper | Point to any local folder of images (JPG/PNG) or videos (MP4/MOV) — each Focus session picks one at random |
 | ⌨️ Global Hotkeys | `Control+Shift+Cmd+O/F` work system-wide |
 | 🔊 Ambient Audio | Built-in volume control for focus sessions |
 
