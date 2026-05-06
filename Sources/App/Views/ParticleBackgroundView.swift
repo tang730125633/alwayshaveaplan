@@ -395,7 +395,9 @@ struct WallpaperBackgroundView: View {
 
     @State private var loadingState: LoadingState = .loading
     private static var cachedAsset: WallpaperAsset?
-    private static let wallpaperPath = "/Users/tang/Library/Mobile Documents/com~apple~CloudDocs/泽龙独家壁纸"
+    private static var wallpaperPath: String? {
+        UserDefaults.standard.string(forKey: "wallpaperFolderPath")
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -452,16 +454,32 @@ struct WallpaperBackgroundView: View {
     private var stateOverlay: some View {
         switch loadingState {
         case .loading:
-            VStack(spacing: 10) {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .scaleEffect(0.75)
-                    .tint(Color.white.opacity(0.55))
-                Text("正在加载壁纸…")
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
+            if Self.wallpaperPath == nil {
+                VStack(spacing: 12) {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.system(size: 28))
+                        .foregroundColor(.white.opacity(0.35))
+                    Text("未设置壁纸文件夹")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.45))
+                    Text("右键底部「换壁纸」按钮\n选择「更换壁纸所在文件夹」")
+                        .font(.system(size: 11, weight: .regular, design: .rounded))
+                        .foregroundColor(.white.opacity(0.28))
+                        .multilineTextAlignment(.center)
+                }
+                .transition(.opacity)
+            } else {
+                VStack(spacing: 10) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(0.75)
+                        .tint(Color.white.opacity(0.55))
+                    Text("正在加载壁纸…")
+                        .font(.system(size: 12, weight: .regular, design: .rounded))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                .transition(.opacity)
             }
-            .transition(.opacity)
         case .failed:
             VStack(spacing: 14) {
                 Image(systemName: "photo.slash")
@@ -563,13 +581,14 @@ struct WallpaperBackgroundView: View {
     }
 
     private func loadRandom() {
+        guard let path = Self.wallpaperPath else { return }
         DispatchQueue.global(qos: .userInitiated).async {
             let imageExts: Set<String> = ["png", "jpg", "jpeg", "webp", "heic"]
             let videoExts: Set<String> = ["mp4", "mov", "m4v"]
             let fm = FileManager.default
             var allURLs: [URL] = []
             if let enumerator = fm.enumerator(
-                at: URL(fileURLWithPath: Self.wallpaperPath),
+                at: URL(fileURLWithPath: path),
                 includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsHiddenFiles]
             ) {

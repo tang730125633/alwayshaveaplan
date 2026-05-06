@@ -174,6 +174,7 @@ struct FocusModeView: View {
                             ambientVolume: $ambientVolume,
                             isVisible: bottomMixerHovered,
                             onWallpaperChange: { wallpaperVersion += 1 },
+                            onWallpaperFolderChange: { openWallpaperFolderPicker() },
                             onHoverChanged: { hovering in
                                 withAnimation(.easeOut(duration: 0.2)) {
                                     bottomMixerHovered = hovering
@@ -218,6 +219,11 @@ struct FocusModeView: View {
             }
             .onAppear {
                 audioPlayer.start(mode: weatherMode, volume: ambientVolume)
+                if UserDefaults.standard.string(forKey: "wallpaperFolderPath") == nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        openWallpaperFolderPicker(isFirstTime: true)
+                    }
+                }
             }
             .onChange(of: weatherMode) { newMode in
                 audioPlayer.switchMode(newMode, volume: ambientVolume)
@@ -229,6 +235,22 @@ struct FocusModeView: View {
                 timer?.invalidate()
                 audioPlayer.stop()
             }
+        }
+    }
+
+    func openWallpaperFolderPicker(isFirstTime: Bool = false) {
+        let panel = NSOpenPanel()
+        panel.title = isFirstTime ? "选择壁纸文件夹（首次设置）" : "更换壁纸所在文件夹"
+        panel.message = isFirstTime
+            ? "选择一个包含图片或视频的文件夹，专注模式将随机从中选取壁纸。"
+            : "选择新的壁纸文件夹，支持图片（JPG/PNG/WEBP/HEIC）和视频（MP4/MOV）。"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = isFirstTime ? "设为壁纸文件夹" : "选择"
+        if panel.runModal() == .OK, let url = panel.url {
+            UserDefaults.standard.set(url.path, forKey: "wallpaperFolderPath")
+            wallpaperVersion += 1
         }
     }
 
@@ -771,6 +793,7 @@ private struct BottomEnvironmentMixer: View {
     @Binding var ambientVolume: Double
     let isVisible: Bool
     let onWallpaperChange: () -> Void
+    let onWallpaperFolderChange: () -> Void
     let onHoverChanged: (Bool) -> Void
 
     private let blurRange: ClosedRange<Double> = 0...36
@@ -828,7 +851,14 @@ private struct BottomEnvironmentMixer: View {
                     .foregroundColor(.white.opacity(0.56))
             }
             .buttonStyle(.plain)
-            .help("换一张壁纸")
+            .help("换一张壁纸 / 右键更换文件夹")
+            .contextMenu {
+                Button {
+                    onWallpaperFolderChange()
+                } label: {
+                    Label("更换壁纸所在文件夹", systemImage: "folder.badge.gear")
+                }
+            }
 
             DividerCapsule()
 
