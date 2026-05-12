@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="AlwaysHaveAPlan"
-VERSION="v1.1.1"
+VERSION="v1.2.1"
 DMG_NAME="${APP_NAME}-${VERSION}-Installer"
 SOURCE_APP="run/release/${APP_NAME}.app"
 STAGING_DIR="dmg-staging"

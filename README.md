@@ -157,6 +157,11 @@ swift run
 
 ### 更新日志
 
+**v1.2.1** (2026-05-13)
+- 🎨 重新设计 macOS 应用图标，提升 Dock、Finder 和 DMG 安装窗口里的识别度
+- 🖼️ 保留 1024px 源图和生成脚本，后续可稳定复现 `.icns`
+- 📦 同步本地 DMG 打包脚本版本号
+
 **v1.2.0** (2026-05-05)
 - ⌨️ 全局热键支持（`Control+Shift+Command+O/F`），无需聚焦应用
 - ❄️ 粒子尺寸和速度大幅提升，视觉更有张力
@@ -633,6 +638,11 @@ This project is an enhanced fork of [ChrisZou/alwayshaveaplan](https://github.co
 Thanks to the original author for the excellent foundation!
 
 ### Changelog
+
+**v1.2.1** (2026-05-13)
+- 🎨 Redesigned the macOS app icon for better Dock, Finder, and DMG visibility
+- 🖼️ Added the 1024px source image and reproducible icon generation script
+- 📦 Synced local DMG packaging script version
 
 **v1.1.0** (2026-02-20)
 - ✨ Added native macOS frosted glass effect

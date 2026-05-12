@@ -11,7 +11,7 @@ ln -s /Applications dmg-temp/Applications
 hdiutil create -volname "AlwaysHaveAPlan" \
   -srcfolder dmg-temp \
   -ov -format UDZO \
-  AlwaysHaveAPlan-v1.1.1-Installer.dmg
+  AlwaysHaveAPlan-v1.2.1-Installer.dmg
 
 # 清理临时文件
 rm -rf dmg-temp
