@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380" role="img" aria-labelledby="title desc">
+  <title id="title">AlwaysHaveAPlan</title>
+  <desc id="desc">一张克制的 macOS 风格标题图：解锁时回看日历意图，专注时留下文字记录。</desc>
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7FAFF"/>
+      <stop offset="1" stop-color="#E9EFFA"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#EAF0FF" stop-opacity=".72"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="380" rx="30" fill="url(#surface)"/>
+  <circle cx="1086" cy="55" r="174" fill="#DCD4FF" opacity=".44"/>
+  <circle cx="1140" cy="318" r="152" fill="#FFE7A8" opacity=".42"/>
+  <path d="M64 300H1136" stroke="#C6D2EA" stroke-width="2"/>
+  <g id="title-block" transform="translate(72 78)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">
+    <text x="0" y="0" fill="#51657F" font-size="20" font-weight="700" letter-spacing="2">NATIVE macOS · CALENDAR INTENTION</text>
+    <text x="0" y="68" fill="#202B3B" font-size="56" font-weight="760">AlwaysHaveAPlan</text>
+    <text x="0" y="114" fill="#3E506A" font-size="28" font-weight="520">解锁时看见当下；专注时留下记录。</text>
+    <g transform="translate(0 162)">
+      <rect width="430" height="62" rx="17" fill="#FFFFFF" fill-opacity=".7" stroke="#C7D5F0" stroke-width="2"/>
+      <circle cx="32" cy="31" r="12" fill="#7664C6"/>
+      <path d="M32 22v10l7 5" fill="none" stroke="#FFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="64" y="38" fill="#344966" font-size="22" font-weight="700">解锁提醒 · 专注书写 · 本机日记</text>
+    </g>
+  </g>
+  <g id="intention-card-motif" transform="translate(740 62)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">
+    <text x="0" y="0" fill="#5B6E89" font-size="20" font-weight="700" letter-spacing="1.5">INTENTION CARD</text>
+    <rect x="0" y="30" width="378" height="238" rx="28" fill="url(#card)" stroke="#FFFFFF" stroke-width="3"/>
+    <rect x="28" y="58" width="322" height="46" rx="14" fill="#E7EDFB"/>
+    <rect x="48" y="72" width="80" height="18" rx="9" fill="#AFC0E8"/>
+    <circle cx="320" cy="81" r="13" fill="#F0C95A"/>
+    <path d="M54 144h34m-17-17v34" stroke="#7664C6" stroke-width="4" stroke-linecap="round"/>
+    <text x="108" y="140" fill="#344966" font-size="25" font-weight="750">此刻最重要的事</text>
+    <text x="108" y="171" fill="#526884" font-size="21">看见当前安排，再开始。</text>
+    <path d="M48 203H330" stroke="#C8D5EC" stroke-width="2"/>
+    <text x="48" y="237" fill="#7664C6" font-size="22" font-weight="750">NOW</text>
+    <path d="M116 230h192" stroke="#F0C95A" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="232" cy="230" r="10" fill="#202B3B"/>
+  </g>
+</svg>
