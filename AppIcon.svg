@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="app-shape">
+      <rect x="32" y="32" width="960" height="960" rx="220"/>
+    </clipPath>
+    <pattern id="editorial-grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#171612" stroke-width="2" opacity="0.055"/>
+    </pattern>
+  </defs>
+
+  <g clip-path="url(#app-shape)">
+    <rect x="32" y="32" width="960" height="960" fill="#f1eee4"/>
+    <rect x="32" y="32" width="960" height="960" fill="url(#editorial-grid)"/>
+    <rect x="96" y="96" width="832" height="832" rx="172" fill="none" stroke="#171612" stroke-width="10" opacity="0.08"/>
+
+    <path d="M184 258H530L184 646H548" fill="none" stroke="#171612" stroke-width="88" stroke-linecap="square" stroke-linejoin="miter"/>
+    <path d="M670 258V646H856" fill="none" stroke="#171612" stroke-width="88" stroke-linecap="square" stroke-linejoin="miter"/>
+
+    <circle cx="838" cy="194" r="48" fill="#d65336"/>
+    <circle cx="838" cy="194" r="13" fill="#f1eee4"/>
+
+    <path d="M164 784H860" fill="none" stroke="#6e6a61" stroke-width="16" stroke-linecap="square" opacity="0.22"/>
+    <path d="M164 784H612" fill="none" stroke="#d65336" stroke-width="16" stroke-linecap="square"/>
+  </g>
+
+  <rect x="44" y="44" width="936" height="936" rx="208" fill="none" stroke="#171612" stroke-width="24"/>
+</svg>
