@@ -221,7 +221,7 @@ struct NoEventsView: View {
 
                         // 结束时间
                         VStack(spacing: 8) {
-                            Text("结束时间")
+                            Text(endsNextDay ? "结束时间（次日）" : "结束时间")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.stone600)
                             HStack(spacing: 8) {
@@ -327,8 +327,6 @@ struct NoEventsView: View {
 
                     // 打开日历按钮
                     Button(action: {
-                        NSWorkspace.shared.open(URL(string: "x-apple-reminderkit://")!)
-                        // 或者使用日历应用
                         if let calendarURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") {
                             NSWorkspace.shared.open(calendarURL)
                         }
@@ -406,32 +404,19 @@ struct NoEventsView: View {
     }
 
     private func createEvent() {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        var startComponents = DateComponents()
-        startComponents.year = calendar.component(.year, from: today)
-        startComponents.month = calendar.component(.month, from: today)
-        startComponents.day = calendar.component(.day, from: today)
-        startComponents.hour = startHour
-        startComponents.minute = startMinute
-
-        var endComponents = DateComponents()
-        endComponents.year = calendar.component(.year, from: today)
-        endComponents.month = calendar.component(.month, from: today)
-        endComponents.day = calendar.component(.day, from: today)
-        endComponents.hour = endHour
-        endComponents.minute = endMinute
-
-        guard let startDate = calendar.date(from: startComponents),
-              let endDate = calendar.date(from: endComponents),
-              endDate > startDate else {
+        guard let timeRange = EventTimeRange.make(
+            on: Date(),
+            startHour: startHour,
+            startMinute: startMinute,
+            endHour: endHour,
+            endMinute: endMinute
+        ) else {
             errorMessage = "结束时间必须晚于开始时间。"
             return
         }
 
         let calendarManager = CalendarManager()
-        calendarManager.createEvent(title: eventTitle, startDate: startDate, endDate: endDate) { success, error in
+        calendarManager.createEvent(title: eventTitle, startDate: timeRange.start, endDate: timeRange.end) { success, error in
             if let error {
                 Log.error("Create event failed: \(error.localizedDescription)")
             }
@@ -454,6 +439,10 @@ struct NoEventsView: View {
                 }
             }
         }
+    }
+
+    private var endsNextDay: Bool {
+        endHour * 60 + endMinute < startHour * 60 + startMinute
     }
 }
 

@@ -24,18 +24,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Auto-register as a login item (macOS 13+).
-        // Only register if not already registered to avoid duplicate entries.
         let loginItemStatus = SMAppService.mainApp.status
-        if loginItemStatus == .notRegistered {
+        switch loginItemStatus {
+        case .notRegistered, .notFound:
             do {
                 try SMAppService.mainApp.register()
                 Log.info("Login item registered. status=\(SMAppService.mainApp.status.rawValue)")
             } catch {
                 Log.error("Failed to register login item: \(error)")
             }
-        } else {
-            Log.info("Login item already registered. status=\(loginItemStatus.rawValue)")
+        case .enabled:
+            Log.info("Login item enabled")
+        case .requiresApproval:
+            Log.info("Login item requires approval in System Settings")
+        @unknown default:
+            Log.error("Unknown login item status=\(loginItemStatus.rawValue)")
         }
 
         // Disable Command+Q
@@ -68,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(makeMenuItem(title: "打开主窗口", action: #selector(openMainWindow), keyEquivalent: "o", shortcut: openMainWindowShortcut))
         menu.addItem(makeMenuItem(title: "进入专注模式", action: #selector(openFocusMode), keyEquivalent: "f", shortcut: openFocusModeShortcut))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: ""))
 
         statusItem?.menu = menu
     }
@@ -102,12 +105,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
-    }
-
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // Prevent Command+Q from quitting the app
-        Log.info("Terminate request blocked")
-        return .terminateCancel
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
