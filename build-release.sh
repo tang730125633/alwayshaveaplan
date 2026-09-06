@@ -4,6 +4,7 @@ set -euo pipefail
 APP_PATH="run/release/AlwaysHaveAPlan.app"
 APP_VERSION="${APP_VERSION:-$(git describe --tags --exact-match 2>/dev/null | sed 's/^v//' || echo '0.0.0')}"
 SIGNING_IDENTITY="${CODESIGN_IDENTITY:--}"
+ENTITLEMENTS="Sources/App/Resources/AlwaysHaveAPlan.entitlements"
 TIME_RANGE_TEST="${TMPDIR:-/tmp}/alwayshaveaplan-time-range-test-$$"
 trap 'rm -f "$TIME_RANGE_TEST"' EXIT
 
@@ -33,11 +34,13 @@ cp Sources/App/Resources/AppIcon.icns "$APP_PATH/Contents/Resources/AppIcon.icns
 
 echo "🔏 Signing complete app bundle..."
 if [[ "$SIGNING_IDENTITY" == "-" ]]; then
-  codesign --force --options runtime --sign - "$APP_PATH"
+  codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign - "$APP_PATH"
 else
-  codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$APP_PATH"
+  codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" "$APP_PATH"
 fi
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+codesign -d --entitlements - --xml "$APP_PATH" 2>/dev/null \
+  | python3 -c 'import plistlib, sys; assert plistlib.loads(sys.stdin.buffer.read()).get("com.apple.security.personal-information.calendars") is True'
 
 echo "✅ Build complete! App bundle created at: $APP_PATH"
 echo "📊 App size: $(du -sh "$APP_PATH" | cut -f1)"
